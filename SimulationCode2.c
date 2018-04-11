@@ -14,20 +14,21 @@ struct process
 struct queue{
 	struct process *p;
 	struct queue *next;
-}*readyQueue=NULL,*temp,*prev=NULL;
+}*readyQueue=NULL,*temp,*prev=NULL,*Sequence=NULL;
 
 struct process* createProcess(int userProcess);
 void Stimulate(struct process *p,int userProcess,int executionTime);
-
+void CreateSequence(struct process *np);
 
  main()
 {
 	int userProcess;
-	int i;
+	int i,sum=0;
 	struct process *p;
-	printf("Enter the number of the process");
+	printf("Enter the number of the process\t");
 	scanf("%d",&userProcess);
 	p=createProcess(userProcess);
+	printf("\nThe Initial condition set are \n");
 	for(i=0;i<userProcess;i++)
 	{
 		printf("\nProcess Name  %s",(p+i)->processName);
@@ -35,7 +36,12 @@ void Stimulate(struct process *p,int userProcess,int executionTime);
 		printf("\tand Burst Time %d",(p+i)->burstTime);
 	}
 	Stimulate(p,userProcess,0);
-	getch();
+	for(i=0;i<userProcess;i++)
+	{
+		sum+=(p+1)->averageTime;
+	}
+	printf("Average Waiting Time = %d",(sum/userProcess));
+		getch();
 	
 }
 
@@ -45,14 +51,14 @@ struct process* createProcess(int userProcess)
 {
 	struct process *p;
 	int i;
-	p=new process[userProcess];
+	p=calloc(userProcess,(sizeof(struct process)));
 	for(i=0;i<userProcess;i++)
 	{
 		printf("Enter the process name\t");
 		scanf("%s",(p+i)->processName);
-		printf("Enter the Arrivl time of the Process");
+		printf("Enter the Arrivl time of the Process\t");
 		scanf("%d",&(p+i)->arrivalTime);
-		printf("Enter the burst time");
+		printf("Enter the burst time\t");
 		scanf("%d",&(p+i)->burstTime);
 		(p+i)->priority=0;
 		(p+i)->averageTime=0;
@@ -67,11 +73,11 @@ struct process* createProcess(int userProcess)
 
 void Stimulate(struct process *pr,int userProcess,int executionTime)
 {
-	
-	struct process *runingProcess;
-	struct queue *ready;
+
+	struct process *runingProcess=NULL;
+	struct queue *ready,*temp2;
 	int flagCheck=1,flag=0;
-	
+	Sequence=NULL;
 	int i;
 		while(flagCheck)
 		{
@@ -83,7 +89,7 @@ void Stimulate(struct process *pr,int userProcess,int executionTime)
 				
 				if(((pr+i)->arrivalTime-executionTime)<=0 && (pr+i)->burstTime>0)
 				{
-					ready=new queue;
+					ready=malloc(sizeof(struct queue));
 					ready->p = (pr+i);
 					ready->next=NULL;
 					
@@ -161,77 +167,88 @@ void Stimulate(struct process *pr,int userProcess,int executionTime)
 					}
 				}}
 					
-				
-					temp=readyQueue;
-						while(temp!=NULL)
-						{
-							printf("\n%s",(temp->p->processName));
-							temp=temp->next;
-						}
 										
-											runingProcess=readyQueue->p;
-											readyQueue->p->burstTime-=1;
-											readyQueue->p->status=1;
-											readyQueue->p->priority+=1;
-											temp=readyQueue;
-											while(temp!=NULL)
-											{	
-												if(temp->p == runingProcess)   //changing here
-												{
+					runingProcess=readyQueue->p;
+					CreateSequence(runingProcess);
+					readyQueue->p->burstTime-=1;
+					readyQueue->p->status=1;
+					readyQueue->p->priority+=1;
+				    temp=readyQueue;
+					while(temp!=NULL)
+					{	
+						if(temp->p == runingProcess)   //changing here
+						{
 													
-												}
-												else
-												{
-													temp->p->priority+=2;
-													temp->p->status=0;
-													temp->p->averageTime+=1;
-												}
-												temp=temp->next;
-											}
+						}
+					    else
+						{
+							temp->p->priority+=2;
+							temp->p->status=0;
+							temp->p->averageTime+=1;
+						}
+						temp=temp->next;
+					}
 											
-						for(i=0;i<userProcess;i++)
+					for(i=0;i<userProcess;i++)
+					{
+						if((pr+i)->burstTime!=0)
 						{
-							if((pr+i)->burstTime!=0)
-							{
-								flag=1;
-								break;
-							}
+							flag=1;
+							break;
 						}
-						if(flag==1)
-						{
-							executionTime++;
-						}
-						else
-						{
-						 	flagCheck=0;
-						}
-				    	temp=readyQueue;
-						while(temp!=NULL)
-						{
-							printf("%s",(temp->p->processName));
-							temp=temp->next;
-						}
-							for(i=0;i<userProcess;i++)
-								{
-									printf("\nProcess Name  %s",(pr+i)->processName);
-									printf("\t with Arrival Time  %d",(pr+i)->arrivalTime);
-									printf("  and Burst Time %d",(pr+i)->burstTime);
-									printf("  and average one Time %d",(pr+i)->averageTime);
-									printf("  and priority %d",(pr+i)->priority);
-									printf("  and status %d",(pr+i)->status);
-								}
-				}
+					}
+					if(flag==1)
+					{
+						executionTime++;
+					}
+					else
+					{
+						flagCheck=0;
+					}
+		}
 				
-			
-	    
-
-
-	temp=readyQueue;
-	while(temp!=NULL)
+	printf("\nThe final status for all the Process are :- \n");
+	for(i=0;i<userProcess;i++)
 	{
-		printf("%s",(temp->p->processName));
-		temp=temp->next;
-	}
+		printf("\nProcess Name  %s",(pr+i)->processName);
+	    printf("\t with Arrival Time  %d",(pr+i)->arrivalTime);
+	    printf("  and  Wait Time %d",(pr+i)->averageTime);
+		printf("  and priority %d",(pr+i)->priority);
+	}	
 
 	
+	printf("\nThe Sequnce for Execution is given as \n\t\t");
+
+	temp=Sequence;
+	while(temp!=NULL)
+	{
+		printf("%s  - > ",(temp->p->processName));
+		temp=temp->next;
+	}
+	printf("\nTotal execution Time Require :- %d\n",executionTime+1);
+
+	
+}
+
+
+
+void CreateSequence(struct process *np)
+{
+	struct queue *temp,*temp2;
+	temp=malloc(sizeof(struct queue));
+	temp->p=np;
+	temp->next=NULL;
+	if(Sequence==NULL)
+	{
+		Sequence=temp;
+	}
+	else
+	{
+		temp2=Sequence;
+		while(temp2->next!=NULL)
+		{
+			temp2=temp2->next;
+		}
+		temp2->next=temp;
+	}
 }
